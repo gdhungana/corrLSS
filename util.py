@@ -133,10 +133,11 @@ def angular_distance(ra1,dec1,ra2,dec2): #- radec in degrees
    ra1=ra1*np.pi/180.0; dec1=dec1*np.pi/180.0
    ra2=ra2*np.pi/180.0; dec2=dec2*np.pi/180.0
 
-   #Using wiki:https://en.wikipedia.org/wiki/Angular_distance
+   #- Using wiki:https://en.wikipedia.org/wiki/Angular_distance
    gamma=np.sin(dec1)*np.sin(dec2)+(np.cos(dec1)*np.cos(dec2)*np.cos(ra1-ra2))
-   gamma=np.arccos(theta)
-   #convert to degree
+   gamma=np.arccos(gamma)
+
+   #- convert back to degree
    gamma*=180.0/np.pi
 
    return gamma
