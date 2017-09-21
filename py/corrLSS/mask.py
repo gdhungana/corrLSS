@@ -31,21 +31,21 @@ def make_mask(theta,phi,thresh=0.2,nside=32,outfile=None,throwfile=None):
     count=countperpix(theta,phi,nside=nside)
     k=np.where(count!=0)[0]
     meancount=np.mean(count[k]) #- mean density
-    print "Mean density", meancount    
+    print("Mean density: {}".format(meancount))    
     mask=np.zeros_like(count)
     throwmask=np.zeros_like(count)
     valid=np.where(count>=thresh*meancount)[0]
     invalid=np.logical_and(count>0,count<thresh*meancount)
-    print "Invalid pixels", invalid[invalid].shape[0]
+    print("Low density pixels thrown: {}".format(invalid[invalid].shape[0]))
     mask[valid]=1
     throwmask[invalid]=count[invalid]
    
     if outfile is not None:
         hp.write_map(outfile,mask) #- healpix map
-        print "Written mask map file", outfile
+        print("Written mask map file {}".format(outfile))
     if throwfile is not None:
         hp.write_map(throwfile,throwmask) #- throwmask
-        print "Written throw mask map file", throwfile
+        print("Written throw mask map file {}".format(throwfile))
     return mask,throwmask
 
 

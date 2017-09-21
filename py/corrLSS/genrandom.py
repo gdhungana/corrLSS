@@ -2,7 +2,7 @@ import numpy as np
 import healpy as hp
 from astropy.table import Table
 from astropy.io import fits,ascii
-from mask import make_mask
+from corrLSS.mask import make_mask
 from corrLSS.util import radec2thetaphi, uniform_sphere, ra_dec_to_xyz
 from sklearn.neighbors import KDTree
 
@@ -25,7 +25,7 @@ def generate_rnd(z,mask,factor=8,nside=32):
     return ra_rnd,dec_rnd,z_rnd
 
 def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1):
-    print "Reading Input catalog: ", catfile
+    print("Reading Input catalog: {}".format(catfile))
     #datacat=Table.read(catfile)
     cat=fits.open(catfile)
     datacat=cat[1].data
@@ -35,21 +35,21 @@ def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outf
 
     #- mask first
     if maskfile is None:
-        print "Creating mask"
+        print("Creating mask")
         theta,phi=radec2thetaphi(ra,dec)
         mask,throwmask=make_mask(theta,phi,thresh=thresh,nside=32,outfile=savemaskfile,throwfile=savethrowfile)
     else:
-        print "Reading maskfile: ", maskfile
+        print("Reading maskfile: ".format(maskfile))
         mask=hp.read_map(maskfile)
     ra_rnd,dec_rnd,z_rnd=generate_rnd(z,mask,factor=factor)
     wt_rnd=np.ones_like(ra_rnd)
 
-    print "Data size: ", len(ra)
-    print "Random size: ", len(ra_rnd) 
+    print("Data size: {}".format(len(ra)))
+    print("Random size: {}".format(len(ra_rnd))) 
     if outfile is not None:
         randata=Table([ra_rnd,dec_rnd,z_rnd,wt_rnd],names=('ra','dec','z','wt'))
         randata.write(outfile,overwrite=True)
-        print "Written random catalog file",outfile
+        print("Written random catalog file {}".format(outfile))
 
 
 def generate_rnd_from_tiles(z,tilesra,tilesdec,factor=8,throw=False,thresh=0.05):
@@ -77,7 +77,7 @@ def generate_rnd_from_tiles(z,tilesra,tilesdec,factor=8,throw=False,thresh=0.05)
     ind = kdt_data.query_radius(data_tiles,r=radius) #- within the tile radius
 
     allind=np.concatenate(ind)
-    print allind.shape
+    print(allind.shape)
     #- throw tiles with very low density
     if throw:
         ntiles=len(tilesra)
@@ -91,9 +91,9 @@ def generate_rnd_from_tiles(z,tilesra,tilesdec,factor=8,throw=False,thresh=0.05)
         #- find mean density
         k=np.where(count!=0)[0]
         meancount=np.mean(count[k])
-        print "Meancount:", meancount
+        print("Meancount: {}".format(meancount))
         throw=np.where((count>0) & (count < thresh*meancount))[0]
-        print "No. of tiles thrown:", len(throw)
+        print("No. of tiles thrown: {}".format(len(throw)))
         #- remove those tiles
         for jj in throw:
             allind=filter(lambda a:a!=jj,allind) 

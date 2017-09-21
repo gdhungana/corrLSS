@@ -23,13 +23,13 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None):
     Use treecorr to evaluate two point correlation given a data catalog and a random catalog
     """
     
-    print "Reading data catalog"
+    print("Reading data catalog")
     datatab=astropy.table.Table.read(catfile)
     z_data=datatab['z']
     ra_data=datatab['ra']
     dec_data=datatab['dec']
 
-    print "Reading random catalog"
+    print("Reading random catalog")
     rndtab=astropy.table.Table.read(rndfile)
     z_rnd=rndtab['z']
     ra_rnd=rndtab['ra']
@@ -39,40 +39,40 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None):
     
     if zmin is None: zmin=np.min(z_data)
     if zmax is None: zmax=np.max(z_data)
-    print "zmin:", zmin, 'to zmax: ',zmax
+    print("zmin:{} to zmax: {}".format(zmin,zmax))
     #TODO make this loop for differnt redshift bins to avoid reading catalogs each time
 
     wh=np.logical_and(z_data>zmin,z_data<zmax)
     ngal=np.count_nonzero(wh)
-    print "Bin contains: ", np.count_nonzero(wh),' galaxies'
+    print("Bin contains: {} galaxies".format(np.count_nonzero(wh))
     
     whr=np.logical_and(z_rnd>zmin,z_rnd<zmax)
     nran=np.count_nonzero(whr)
-    print "Bin Contains: ", np.count_nonzero(whr), ' random objects'
+    print("Bin Contains: {} random objects".format( np.count_nonzero(whr))
 
-    print cosmo.H0
+    print(cosmo.H0)
 
     cmvr_data=cosmo.comoving_distance(z_data[wh])*cosmo.H0.value/100.
     cmvr_rnd=cosmo.comoving_distance(z_rnd[whr])*cosmo.H0.value/100.
 
     dmin,dmax=cosmo.comoving_distance([zmin,zmax])*cosmo.H0.value/100.
-    print "Dmin to Dmax", dmin,' to ', dmax
+    print("Dmin to Dmax: {} to {}".format(dmin,dmax))
     
-    print "Organizing data catalog to use"
+    print("Organizing data catalog to use")
     datacat=make_catalog(ra_data[wh],dec_data[wh],cmvr_data)
-    print "Organizing random catalog to use"
+    print("Organizing random catalog to use")
     rndcat=make_catalog(ra_rnd[whr],dec_rnd[whr],cmvr_rnd)
 
-    print "Auto correlating data"
+    print("Auto correlating data")
     dd=tc.NNCorrelation(min_sep=0.1,bin_size=0.025,max_sep=180.)
     dd.process(datacat)
-    print "Auto correlating random"
+    print("Auto correlating random")
     rr=tc.NNCorrelation(min_sep=0.1,bin_size=0.025,max_sep=180.)
     rr.process(rndcat)
-    print "Cross Correlating"
+    print("Cross Correlating")
     dr=tc.NNCorrelation(min_sep=0.1,bin_size=0.025,max_sep=180.)
     dr.process(datacat,rndcat)
-    print "Calculating 2-pt. correlation"
+    print("Calculating 2-pt. correlation")
     xi,xivar=dd.calculateXi(rr,dr)
     tab=astropy.table.Table([np.exp(dd.logr),xi,xivar],names=('r','xi','xivar'))
     tab.write(outfile,overwrite=True)
@@ -126,9 +126,9 @@ def two_point(data,bins,method='landy-szalay',data_R=None,seed=0):
     
     KDT_D=KDTree(data)
     KDT_R=KDTree(data_R)
-    print "Correlating Data, data size: ", len(data)
+    print("Correlating Data, data size: {}".format(len(data))
     counts_DD=KDT_D.two_point_correlation(data,bins)
-    print 'Correlating Random, random size: ', len(data_R)
+    print('Correlating Random, random size: {}'.formatlen(data_R))
     counts_RR=KDT_R.two_point_correlation(data_R,bins)
     
     DD=np.diff(counts_DD)
@@ -141,21 +141,21 @@ def two_point(data,bins,method='landy-szalay',data_R=None,seed=0):
     if method == 'standard':
         corr = factor**2*DD/RR - 1
     elif method == 'landy-szalay':
-        print "Cross Correlating"
+        print("Cross Correlating")
         counts_DR=KDT_R.two_point_correlation(data,bins)
         DR=np.diff(counts_DR)
-        print "Evaluating correlation using ", method
+        print("Evaluating correlation using {}".format(method))
         corr = (factor**2 * DD - 2 * factor * DR + RR)/RR 
     corr[RR_zero] = np.nan
     return corr
 
 def extract_catalog(catalog,zmin=None,zmax=None):
-    print "Reading catalog."
+    print("Reading catalog.")
     tab = astropy.table.Table.read(catalog)
     ra = tab['ra']
     dec = tab['dec']
-    z = tab['dec']
-    print "Objects in catalog",len(z)
+    z = tab['z']
+    print("Objects in catalog: {}".format(len(z)))
     if zmin is None: zmin=np.min(z)
     if zmax is None: zmax=np.max(z)
     sel=np.where((z >= zmin) & (z < zmax))
@@ -163,9 +163,9 @@ def extract_catalog(catalog,zmin=None,zmax=None):
     ra = ra[sel]
     dec = dec[sel]
     z = z[sel]
-    print "Objects in this redshift bin",  z.shape[0]
+    print("Objects in this redshift bin".format(z.shape[0]))
     #- set cosmology
-    print "Setting Fiducial Cosmology"
+    print("Setting Fiducial Cosmology")
     cosmo = set_cosmology()
     cmv_r = cosmo.comoving_distance(z)*cosmo.H0.value/100.
 
@@ -179,6 +179,6 @@ def extract_catalog(catalog,zmin=None,zmax=None):
 def est_correlation(data,bins,data_R=None,method='landy-szalay'):
     
     #- correlation
-    print "Evaluating 2-pt Correlation."
+    print("Evaluating 2-pt Correlation.")
     corr=two_point(data,bins,method=method,data_R=data_R)
     return bins,corr
