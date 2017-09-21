@@ -3,7 +3,7 @@ import healpy as hp
 from astropy.table import Table
 from astropy.io import fits,ascii
 from mask import make_mask
-from util import uniform_sphere, ra_dec_to_xyz
+from corrLSS.util import radec2thetaphi, uniform_sphere, ra_dec_to_xyz
 from sklearn.neighbors import KDTree
 
 
@@ -26,10 +26,12 @@ def generate_rnd(z,mask,factor=8,nside=32):
 
 def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1):
     print "Reading Input catalog: ", catfile
-    datacat=Table.read(catfile)
-    ra=datacat['ra']
-    dec=datacat['dec']
-    z=datacat['z']
+    #datacat=Table.read(catfile)
+    cat=fits.open(catfile)
+    datacat=cat[1].data
+    ra=datacat['RA']
+    dec=datacat['DEC']
+    z=datacat['Z_COSMO']
 
     #- mask first
     if maskfile is None:
