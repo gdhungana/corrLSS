@@ -3,8 +3,7 @@ import matplotlib.pyplot as plt
 import treecorr as tc
 import astropy.table
 import healpy as hp
-from genrandom import generate_rnd
-from util import apply_mask,radec2thetaphi
+from corrLSS.util import apply_mask,radec2thetaphi
 
 # Cosmology
 def set_cosmology():
@@ -18,19 +17,30 @@ def set_cosmology():
     cosmo=FlatLambdaCDM(H0=H0,Om0=Omega_matter)
     return cosmo
 
-def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None):
+def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None):
     """
     Use treecorr to evaluate two point correlation given a data catalog and a random catalog
     """
     
     print("Reading data catalog")
-    datatab=astropy.table.Table.read(catfile)
-    z_data=datatab['z']
+    #datatab=astropy.table.Table.read(catfile)
+    cat=astropy.io.fits.open(catfile)
+    datatab=cat[1].data
+    #z_data=datatab['Z_COSMO']
+    z_data=datatab['TRUEZ']
     ra_data=datatab['ra']
     dec_data=datatab['dec']
+    if objtype is not None:
+        kk=np.where(datacat['SOURCETYPE']==objtype)[0]
+        print("Total {} in the data: {}".format(objtype,len(kk)))
+        ra_data=ra_data[kk]
+        dec_data=dec_data[kk]
+        z_data=z_data[kk]
 
     print("Reading random catalog")
-    rndtab=astropy.table.Table.read(rndfile)
+    #rndtab=astropy.table.Table.read(rndfile)
+    rnd=astropy.io.fits.open(rndfile)
+    rndtab=rnd[1].data
     z_rnd=rndtab['z']
     ra_rnd=rndtab['ra']
     dec_rnd=rndtab['dec']
@@ -44,11 +54,11 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None):
 
     wh=np.logical_and(z_data>zmin,z_data<zmax)
     ngal=np.count_nonzero(wh)
-    print("Bin contains: {} galaxies".format(np.count_nonzero(wh))
+    print("Bin contains: {} galaxies".format(np.count_nonzero(wh)))
     
     whr=np.logical_and(z_rnd>zmin,z_rnd<zmax)
     nran=np.count_nonzero(whr)
-    print("Bin Contains: {} random objects".format( np.count_nonzero(whr))
+    print("Bin Contains: {} random objects".format( np.count_nonzero(whr)))
 
     print(cosmo.H0)
 
@@ -126,9 +136,9 @@ def two_point(data,bins,method='landy-szalay',data_R=None,seed=0):
     
     KDT_D=KDTree(data)
     KDT_R=KDTree(data_R)
-    print("Correlating Data, data size: {}".format(len(data))
+    print("Correlating Data, data size: {}".format(len(data)))
     counts_DD=KDT_D.two_point_correlation(data,bins)
-    print('Correlating Random, random size: {}'.formatlen(data_R))
+    print('Correlating Random, random size: {}'.format(len(data_R)))
     counts_RR=KDT_R.two_point_correlation(data_R,bins)
     
     DD=np.diff(counts_DD)

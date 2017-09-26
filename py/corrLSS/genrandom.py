@@ -3,7 +3,7 @@ import healpy as hp
 from astropy.table import Table
 from astropy.io import fits,ascii
 from corrLSS.mask import make_mask
-from corrLSS.util import radec2thetaphi, uniform_sphere, ra_dec_to_xyz
+from corrLSS.util import radec2thetaphi, uniform_sphere, ra_dec_to_xyz, apply_mask
 from sklearn.neighbors import KDTree
 
 
@@ -24,15 +24,37 @@ def generate_rnd(z,mask,factor=8,nside=32):
 
     return ra_rnd,dec_rnd,z_rnd
 
-def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1):
+def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1,objtype=None):
     print("Reading Input catalog: {}".format(catfile))
     #datacat=Table.read(catfile)
     cat=fits.open(catfile)
     datacat=cat[1].data
     ra=datacat['RA']
     dec=datacat['DEC']
-    z=datacat['Z_COSMO']
+    #if 'TRUEZ' in cat[1].header:
+    z=datacat['TRUEZ']
+    print("Using header TRUEZ")    
+    #elif 'COSMO_Z' in cat[1].header:
+    #    z=datacat['COSMO_Z']
+    #    print("Using Cosmo_Z")
+    #elif 'Z' in cat[1].header:
+    #    z=datacat['Z']
+    #    print("Using header Z")
+    #else:
+    #   print("None of z available. crashing")
 
+    #-select the specified object
+    if objtype is not None:
+        print("Selecting obj type {} for randoms".format(objtype))
+        kk=np.where(datacat['SOURCETYPE']==objtype)[0]
+        print("Total {} in the data: {}".format(objtype,len(kk)))
+        ra=ra[kk]
+        dec=dec[kk]
+        z=z[kk]
+    else:
+        print("Working on full catalog")
+        print("Total objects: {}".format(len(z)))
+        
     #- mask first
     if maskfile is None:
         print("Creating mask")
@@ -41,6 +63,7 @@ def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outf
     else:
         print("Reading maskfile: ".format(maskfile))
         mask=hp.read_map(maskfile)
+    print("Generating random: factor {}".format(factor))
     ra_rnd,dec_rnd,z_rnd=generate_rnd(z,mask,factor=factor)
     wt_rnd=np.ones_like(ra_rnd)
 
