@@ -26,12 +26,33 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None):
     #datatab=astropy.table.Table.read(catfile)
     cat=astropy.io.fits.open(catfile)
     datatab=cat[1].data
-    #z_data=datatab['Z_COSMO']
-    z_data=datatab['TRUEZ']
+    try:
+        z_data=datacat['Z_COSMO']
+        print("Using Z_COSMO for z")
+    except:
+        try:
+            z_data=datacat['TRUEZ']
+            print("Using TRUEZ for z")
+        except:
+            try:
+                z_data=datacat['Z']
+                print("Using Z for z")
+            except:
+                raise ValueError("None of the specified z-types match. Check fits header")
+
     ra_data=datatab['ra']
     dec_data=datatab['dec']
     if objtype is not None:
-        kk=np.where(datacat['SOURCETYPE']==objtype)[0]
+        try:
+            kk=np.where(datacat['SOURCETYPE']==objtype)[0]
+            print("Using sourcetype {}".format(objtype))
+        except:
+            try:
+                kk=np.where(datacat['SPECTYPE']==objtype)[0]
+                print("Using spectype {}".format(objtype))
+            except:
+                print("Objtype doesn't match header key. Check fits header")
+        print("Total {} in the data: {}".format(objtype,len(kk)))
         print("Total {} in the data: {}".format(objtype,len(kk)))
         ra_data=ra_data[kk]
         dec_data=dec_data[kk]

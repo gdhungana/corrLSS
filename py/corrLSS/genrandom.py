@@ -31,22 +31,33 @@ def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outf
     datacat=cat[1].data
     ra=datacat['RA']
     dec=datacat['DEC']
-    #if 'TRUEZ' in cat[1].header:
-    z=datacat['TRUEZ']
-    print("Using header TRUEZ")    
-    #elif 'COSMO_Z' in cat[1].header:
-    #    z=datacat['COSMO_Z']
-    #    print("Using Cosmo_Z")
-    #elif 'Z' in cat[1].header:
-    #    z=datacat['Z']
-    #    print("Using header Z")
-    #else:
-    #   print("None of z available. crashing")
-
+    ztypes=['Z_COSMO','TRUEZ','Z']
+    try:
+        z=datacat['Z_COSMO']
+        print("Using Z_COSMO for z")
+    except:
+        try:
+            z=datacat['TRUEZ']
+            print("Using TRUEZ for z")
+        except:
+            try:
+                z=datacat['Z']
+                print("Using Z for z")
+            except:
+                raise ValueError("None of the specified z-types match. Check fits header")
+    
     #-select the specified object
     if objtype is not None:
         print("Selecting obj type {} for randoms".format(objtype))
-        kk=np.where(datacat['SOURCETYPE']==objtype)[0]
+        try:
+            kk=np.where(datacat['SOURCETYPE']==objtype)[0]
+            print("Using sourcetype {}".format(objtype))
+        except:
+            try:
+                kk=np.where(datacat['SPECTYPE']==objtype)[0]
+                print("Using spectype {}".format(objtype))
+            except:
+                print("Objtype doesn't match header key. Check fits header")
         print("Total {} in the data: {}".format(objtype,len(kk)))
         ra=ra[kk]
         dec=dec[kk]
