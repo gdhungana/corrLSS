@@ -24,13 +24,12 @@ def generate_rnd(z,mask,factor=8,nside=32):
 
     return ra_rnd,dec_rnd,z_rnd
 
-def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1,objtype=None):
+def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1,objtype=None,truthfile=None):
     print("Reading Input catalog: {}".format(catfile))
     #datacat=Table.read(catfile)
     cat=fits.open(catfile)
     datacat=cat[1].data
-    ra=datacat['RA']
-    dec=datacat['DEC']
+
     ztypes=['Z_COSMO','TRUEZ','Z']
     try:
         z=datacat['Z_COSMO']
@@ -45,6 +44,22 @@ def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outf
                 print("Using Z for z")
             except:
                 raise ValueError("None of the specified z-types match. Check fits header")
+   if truthfile is not None: #- required to match targetid for ra,dec
+        tru=astropy.io.fits.open(truthfile)
+        trucat=tru[1].data
+        truid=trucat['TARGETID']
+        dataid=datacat['TARGETID']
+        #- map targetid sorted as in dataid
+        tt=np.argsort(truid)
+        ss=np.searchsorted(truid[tt],dataid)
+        srt_idx=tt[ss]
+        np.testing.assert_array_equal(truid[srt_idx],dataid)
+        print("100% targets matched for data catalog")
+        ra_data=trucat['RA'][srt_idx]
+        dec_data=trucat['DEC'][srt_idx]
+    else:        
+        ra_data=datacat['ra']
+        dec_data=datacat['dec']
     
     #-select the specified object
     if objtype is not None:

@@ -17,7 +17,7 @@ def set_cosmology():
     cosmo=FlatLambdaCDM(H0=H0,Om0=Omega_matter)
     return cosmo
 
-def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None):
+def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None,truthfile=None):
     """
     Use treecorr to evaluate two point correlation given a data catalog and a random catalog
     """
@@ -39,9 +39,22 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None):
                 print("Using Z for z")
             except:
                 raise ValueError("None of the specified z-types match. Check fits header")
-
-    ra_data=datacat['ra']
-    dec_data=datacat['dec']
+    if truthfile is not None: #- required to match targetid for ra,dec
+        tru=astropy.io.fits.open(truthfile)
+        trucat=tru[1].data
+        truid=trucat['TARGETID']
+        dataid=datacat['TARGETID']
+        #- map targetid sorted as in dataid
+        tt=np.argsort(truid)
+        ss=np.searchsorted(truid[tt],dataid)
+        srt_idx=tt[ss]
+        np.testing.assert_array_equal(truid[srt_idx],dataid)
+        print("100% targets matched for data catalog")
+        ra_data=trucat['RA'][srt_idx]
+        dec_data=trucat['DEC'][srt_idx]
+    else:        
+        ra_data=datacat['ra']
+        dec_data=datacat['dec']
     if objtype is not None:
         try:
             kk=np.where(datacat['SOURCETYPE']==objtype)[0]
