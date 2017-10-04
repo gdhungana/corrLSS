@@ -25,7 +25,7 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None):
     print("Reading data catalog")
     #datatab=astropy.table.Table.read(catfile)
     cat=astropy.io.fits.open(catfile)
-    datatab=cat[1].data
+    datacat=cat[1].data
     try:
         z_data=datacat['Z_COSMO']
         print("Using Z_COSMO for z")
@@ -40,8 +40,8 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None):
             except:
                 raise ValueError("None of the specified z-types match. Check fits header")
 
-    ra_data=datatab['ra']
-    dec_data=datatab['dec']
+    ra_data=datacat['ra']
+    dec_data=datacat['dec']
     if objtype is not None:
         try:
             kk=np.where(datacat['SOURCETYPE']==objtype)[0]
