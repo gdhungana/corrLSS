@@ -126,7 +126,7 @@ def make_catalog(ra,dec,cmvr=None): #- ra, dec in degrees
     return cat
 
 
-def two_point(data,bins,method='landy-szalay',data_R=None,seed=0):
+def two_point(data,data_R,bins,method='landy-szalay',seed=1234,saverandom=False):
     """
     Uses nearest neighbors KDtree to evaluate two point correlation
     
@@ -138,6 +138,7 @@ def two_point(data,bins,method='landy-szalay',data_R=None,seed=0):
         Errors are not returned. A bootstrap sampling can be run N times to 
         evaluate errors.         
     """
+    from sklearn.neighbors import KDTree
     data = np.asarray(data)
     bins = np.asarray(bins)
     rng = np.random.RandomState(seed)
@@ -219,6 +220,27 @@ def extract_catalog(catalog,zmin=None,zmax=None):
     #- set data:
     data=np.transpose([carx,cary,carz])
     return data
+
+def make_data_R_catalog(datacat,outfile='random_from_datacat.fits',seed=1234):
+    """
+    Make random background from shuffling data
+    """
+    datatab=astropy.table.Table.read(catalog)
+    ra = tab['ra']
+    dec = tab['dec']
+    z = tab['z']
+    data=np.transpose(['ra','dec','z'])
+    #- create random by shuffling all but 1 axis
+    data_R = data.copy()
+    n_samples, n_features = data.shape    
+    rng = np.random.RandomState(seed)
+
+    for i in range(n_features - 1):
+        rng.shuffle(data_R[:, i])
+    randdata=astropy.table.Table([data_R[0,:],data_R[1,:],data_R[2,:]],names=('RA','DEC','Z'))
+    
+    randdata.write(outfile,format='fits')
+    print("Written Random file from data shuffling: {}".format(outfile))
     
 def est_correlation(data,bins,data_R=None,method='landy-szalay'):
     

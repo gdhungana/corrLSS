@@ -44,8 +44,8 @@ def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outf
                 print("Using Z for z")
             except:
                 raise ValueError("None of the specified z-types match. Check fits header")
-   if truthfile is not None: #- required to match targetid for ra,dec
-        tru=astropy.io.fits.open(truthfile)
+    if truthfile is not None: #- required to match targetid for ra,dec
+        tru=fits.open(truthfile)
         trucat=tru[1].data
         truid=trucat['TARGETID']
         dataid=datacat['TARGETID']
@@ -55,11 +55,11 @@ def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outf
         srt_idx=tt[ss]
         np.testing.assert_array_equal(truid[srt_idx],dataid)
         print("100% targets matched for data catalog")
-        ra_data=trucat['RA'][srt_idx]
-        dec_data=trucat['DEC'][srt_idx]
+        ra=trucat['RA'][srt_idx]
+        dec=trucat['DEC'][srt_idx]
     else:        
-        ra_data=datacat['ra']
-        dec_data=datacat['dec']
+        ra=datacat['ra']
+        dec=datacat['dec']
     
     #-select the specified object
     if objtype is not None:
