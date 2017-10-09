@@ -197,9 +197,9 @@ def two_point(data,data_R,bins,method='landy-szalay',seed=1234,saverandom=False)
 def extract_catalog(catalog,zmin=None,zmax=None):
     print("Reading catalog.")
     tab = astropy.table.Table.read(catalog)
-    ra = tab['ra']
-    dec = tab['dec']
-    z = tab['z']
+    ra = tab['RA']
+    dec = tab['DEC']
+    z = tab['Z']
     print("Objects in catalog: {}".format(len(z)))
     if zmin is None: zmin=np.min(z)
     if zmax is None: zmax=np.max(z)
@@ -225,19 +225,22 @@ def make_data_R_catalog(datacat,outfile='random_from_datacat.fits',seed=1234):
     """
     Make random background from shuffling data
     """
-    datatab=astropy.table.Table.read(catalog)
-    ra = tab['ra']
-    dec = tab['dec']
-    z = tab['z']
-    data=np.transpose(['ra','dec','z'])
+    print("Reading data catalog")
+    datatab=astropy.table.Table.read(datacat)
+    ra = datatab['RA']
+    dec = datatab['DEC']
+    z = datatab['Z']
+    data=np.transpose([ra,dec,z])
+    
     #- create random by shuffling all but 1 axis
+    print("Making random catalog from data")
     data_R = data.copy()
     n_samples, n_features = data.shape    
     rng = np.random.RandomState(seed)
 
     for i in range(n_features - 1):
         rng.shuffle(data_R[:, i])
-    randdata=astropy.table.Table([data_R[0,:],data_R[1,:],data_R[2,:]],names=('RA','DEC','Z'))
+    randdata=astropy.table.Table([data_R[:,0],data_R[:,1],data_R[:,2]],names=('RA','DEC','Z'))
     
     randdata.write(outfile,format='fits')
     print("Written Random file from data shuffling: {}".format(outfile))
