@@ -17,7 +17,7 @@ def set_cosmology():
     cosmo=FlatLambdaCDM(H0=H0,Om0=Omega_matter)
     return cosmo
 
-def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None,truthfile=None):
+def arrange_catalog(catfile,rndfile=None,zmin=None,zmax=None,objtype=None,truthfile=None):
     """
     Use treecorr to evaluate two point correlation given a data catalog and a random catalog
     """
@@ -71,13 +71,6 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None,truthf
         dec_data=dec_data[kk]
         z_data=z_data[kk]
 
-    print("Reading random catalog")
-    #rndtab=astropy.table.Table.read(rndfile)
-    rnd=astropy.io.fits.open(rndfile)
-    rndtab=rnd[1].data
-    z_rnd=rndtab['z']
-    ra_rnd=rndtab['ra']
-    dec_rnd=rndtab['dec']
 
     cosmo=set_cosmology()
     
@@ -89,24 +82,40 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None,truthf
     wh=np.logical_and(z_data>zmin,z_data<zmax)
     ngal=np.count_nonzero(wh)
     print("Bin contains: {} galaxies".format(np.count_nonzero(wh)))
-    
-    whr=np.logical_and(z_rnd>zmin,z_rnd<zmax)
-    nran=np.count_nonzero(whr)
-    print("Bin Contains: {} random objects".format( np.count_nonzero(whr)))
-
     print(cosmo.H0)
 
     cmvr_data=cosmo.comoving_distance(z_data[wh])*cosmo.H0.value/100.
-    cmvr_rnd=cosmo.comoving_distance(z_rnd[whr])*cosmo.H0.value/100.
-
     dmin,dmax=cosmo.comoving_distance([zmin,zmax])*cosmo.H0.value/100.
     print("Dmin to Dmax: {} to {}".format(dmin,dmax))
-    
     print("Organizing data catalog to use")
     datacat=make_catalog(ra_data[wh],dec_data[wh],cmvr_data)
-    print("Organizing random catalog to use")
-    rndcat=make_catalog(ra_rnd[whr],dec_rnd[whr],cmvr_rnd)
 
+    if rndfile is not None:
+        print("Reading random catalog")
+        #rndtab=astropy.table.Table.read(rndfile)
+        rnd=astropy.io.fits.open(rndfile)
+        rndtab=rnd[1].data
+        z_rnd=rndtab['z']
+        ra_rnd=rndtab['ra']
+        dec_rnd=rndtab['dec']
+    
+        whr=np.logical_and(z_rnd>zmin,z_rnd<zmax)
+        nran=np.count_nonzero(whr)
+        print("Bin Contains: {} random objects".format( np.count_nonzero(whr)))
+        cmvr_rnd=cosmo.comoving_distance(z_rnd[whr])*cosmo.H0.value/100.
+        print("Organizing random catalog to use")
+        rndcat=make_catalog(ra_rnd[whr],dec_rnd[whr],cmvr_rnd)
+
+        return datacat, rndcat
+    else:
+        return datacat
+
+def correlate_tc(datacat,rndcat,outfile,cutoff=None):
+
+    """
+    datacat and randcat are tc.catalog object
+    """
+    
     print("Auto correlating data")
     dd=tc.NNCorrelation(min_sep=0.1,bin_size=0.025,max_sep=180.)
     dd.process(datacat)
@@ -120,6 +129,20 @@ def correlate_tc(catfile,rndfile,outfile,zmin=None,zmax=None,objtype=None,truthf
     xi,xivar=dd.calculateXi(rr,dr)
     tab=astropy.table.Table([np.exp(dd.logr),xi,xivar],names=('r','xi','xivar'))
     tab.write(outfile,overwrite=True)
+
+def random_data_xyz(datacat,bandwidth=5.):
+    """
+    data cat is treecorr catalog object and should have x, y, and z
+    random is created here in xyz
+    """
+    from scipy.stats import gaussian_kde
+
+    values=np.vstack([datacat.x,datacat.y,datacat.z])
+    kde=gaussian_kde(values,bw_method=bandwidth)
+    nx,ny,nz=kde.resample(2*len(datacat.z))
+    randcat=tc.Catalog(x=nx,y=ny,z=nz)
+    return randcat
+    
     
 def make_catalog(ra,dec,cmvr=None): #- ra, dec in degrees
     cat=tc.Catalog(ra=ra,dec=dec,r=cmvr,ra_units='deg',dec_units='deg')
