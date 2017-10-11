@@ -255,9 +255,9 @@ def make_data_R_catalog(datacat,outfile='random_from_datacat.fits',seed=1234):
     """
     print("Reading data catalog")
     datatab=astropy.table.Table.read(datacat)
-    ra = datatab['RA']
-    dec = datatab['DEC']
-    z = datatab['Z']
+    ra = datatab['ra']
+    dec = datatab['dec']
+    z = datatab['z']
     data=np.transpose([ra,dec,z])
     
     #- create random by shuffling all but 1 axis

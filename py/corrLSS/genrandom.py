@@ -24,7 +24,7 @@ def generate_rnd(z,mask,factor=8,nside=32):
 
     return ra_rnd,dec_rnd,z_rnd
 
-def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1,objtype=None,truthfile=None):
+def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outfile=None,factor=8,thresh=0.1,objtype=None,truthfile=None,chop=False):
     print("Reading Input catalog: {}".format(catfile))
     #datacat=Table.read(catfile)
     cat=fits.open(catfile)
@@ -91,8 +91,19 @@ def make_random(catfile,maskfile=None,savemaskfile=None,savethrowfile=None, outf
         mask=hp.read_map(maskfile)
     print("Generating random: factor {}".format(factor))
     ra_rnd,dec_rnd,z_rnd=generate_rnd(z,mask,factor=factor)
-    wt_rnd=np.ones_like(ra_rnd)
+    #wt_rnd=np.ones_like(ra_rnd)
 
+    #- Now cut to data boundaries
+    if chop:
+        cut=np.logical_and(ra_rnd>=np.min(ra),ra_rnd<=np.max(ra))
+        ra_rnd=ra_rnd[cut]
+        dec_rnd=dec_rnd[cut]
+        z_rnd=z_rnd[cut]
+        cut=np.logical_and(dec_rnd>=np.min(dec),dec_rnd<=np.max(dec))
+        ra_rnd=ra_rnd[cut]
+        dec_rnd=dec_rnd[cut]
+        z_rnd=z_rnd[cut]
+    wt_rnd=np.ones_like(ra_rnd)
     print("Data size: {}".format(len(ra)))
     print("Random size: {}".format(len(ra_rnd))) 
     if outfile is not None:
