@@ -130,17 +130,22 @@ def correlate_tc(datacat,rndcat,outfile,cutoff=None):
     tab=astropy.table.Table([np.exp(dd.logr),xi,xivar],names=('r','xi','xivar'))
     tab.write(outfile,overwrite=True)
 
-def random_data_xyz(datacat,bandwidth=5.):
+def random_data_xyz(datacat,bandwidth=0.2,format='xyz'):
     """
     data cat is treecorr catalog object and should have x, y, and z
     random is created here in xyz
     """
     from scipy.stats import gaussian_kde
-
-    values=np.vstack([datacat.x,datacat.y,datacat.z])
-    kde=gaussian_kde(values,bw_method=bandwidth)
-    nx,ny,nz=kde.resample(2*len(datacat.z))
-    randcat=tc.Catalog(x=nx,y=ny,z=nz)
+    if format=='xyz':
+        values=np.vstack([datacat.x,datacat.y,datacat.z])
+        kde=gaussian_kde(values,bw_method=bandwidth/values.std(ddof=1))
+        nx,ny,nz=kde.resample(2*len(datacat.z))
+        randcat=tc.Catalog(x=nx,y=ny,z=nz)
+    elif format=='radecr':
+        values=np.vstack([datacat.ra/datacat.ra_units,datacat.dec/datacat.dec_units,datacat.r])
+        kde=gaussian_kde(values,bw_method=bandwidth/values.std(ddof=1))
+        nra,ndec,nr=kde.resample(2*len(datacat.r))
+        randcat=tc.Catalog(ra=nra,dec=ndec,ra_units='deg',dec_units='deg',r=nr)
     return randcat
     
     

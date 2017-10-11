@@ -141,3 +141,60 @@ def angular_distance(ra1,dec1,ra2,dec2): #- radec in degrees
    gamma*=180.0/np.pi
 
    return gamma
+
+
+def random_sample_catalog(catfile,size,racut=None,deccut=None,zcut=None,seed=1234,outfile='sampled_catalog.fits'):
+    import astropy
+    #- cuts should be tuple
+    print("Reading data catalog")
+    #datatab=astropy.table.Table.read(catfile)
+    cat=astropy.io.fits.open(catfile)
+    datacat=cat[1].data
+    try:
+        z=datacat['Z_COSMO']
+        print("Using Z_COSMO for z")
+    except:
+        try:
+            z=datacat['TRUEZ']
+            print("Using TRUEZ for z")
+        except:
+            try:
+                z=datacat['Z']
+                print("Using Z for z")
+            except:
+                raise ValueError("None of the specified z-types match. Check fits header")
+
+    ra=datacat['ra']
+    dec=datacat['dec']
+
+    print("Catalog contains {} objects".format(len(ra)))
+    
+    if racut is not None:
+        cut=np.logical_and(ra>racut[0],ra<racut[1])#,dec>0,dec<30,z>0.62,z<0.68)
+        ra=ra[cut]
+        dec=dec[cut]
+        z=z[cut]
+    if deccut is not None:
+        cut=np.logical_and(dec>deccut[0], dec<deccut[1])
+        ra=ra[cut]
+        dec=dec[cut]
+        z=z[cut]
+    if zcut is not None:
+        cut=np.logical_and(z>zcut[0],z<zcut[1])
+        ra=ra[cut]
+        dec=dec[cut]
+        z=z[cut]
+    print("Catalog contains {} objects after cuts".format(len(ra)))
+    
+    print("Sampling from the data catalog")
+    rst=np.random.RandomState(seed)
+    idx=rst.choice(z.shape[0],size,replace=False)
+    
+    ra=ra[idx]
+    dec=dec[idx]
+    z=z[idx]
+
+    randdata=astropy.table.Table([ra,dec,z],names=('RA','DEC','Z'))
+    randdata.write(outfile,format='fits',overwrite=True)
+
+    
