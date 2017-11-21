@@ -143,7 +143,7 @@ def angular_distance(ra1,dec1,ra2,dec2): #- radec in degrees
    return gamma
 
 
-def random_sample_catalog(catfile,size,racut=None,deccut=None,zcut=None,seed=1234,outfile='sampled_catalog.fits'):
+def random_sample_catalog(catfile,size=None,racut=None,deccut=None,zcut=None,seed=1234,sample=True,outfile='sample_catalog.fits'):
     import astropy
     #- cuts should be tuple
     print("Reading data catalog")
@@ -186,13 +186,16 @@ def random_sample_catalog(catfile,size,racut=None,deccut=None,zcut=None,seed=123
         z=z[cut]
     print("Catalog contains {} objects after cuts".format(len(ra)))
     
-    print("Sampling from the data catalog")
-    rst=np.random.RandomState(seed)
-    idx=rst.choice(z.shape[0],size,replace=False)
+    if sample:
+        print("Sampling from the data catalog")
+        rst=np.random.RandomState(seed)
+        idx=rst.choice(z.shape[0],size,replace=False)
     
-    ra=ra[idx]
-    dec=dec[idx]
-    z=z[idx]
+        ra=ra[idx]
+        dec=dec[idx]
+        z=z[idx]
+    else:
+        print("writing data after cuts")
 
     randdata=astropy.table.Table([ra,dec,z],names=('RA','DEC','Z'))
     randdata.write(outfile,format='fits',overwrite=True)
