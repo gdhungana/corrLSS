@@ -194,8 +194,7 @@ def random_sample_catalog(catfile,size=None,racut=None,deccut=None,zcut=None,see
         ra=ra[idx]
         dec=dec[idx]
         z=z[idx]
-    else:
-        print("writing data after cuts")
+        print("writing data after sampling to {:}".format(len(ra)))
 
     randdata=astropy.table.Table([ra,dec,z],names=('RA','DEC','Z'))
     randdata.write(outfile,format='fits',overwrite=True)
